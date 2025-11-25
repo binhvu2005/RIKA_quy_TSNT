@@ -2,7 +2,7 @@
   <div id="app" class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     <router-view v-slot="{ Component, route }">
       <transition
-        :name="route.meta.transition || 'page'"
+        :name="(route.meta.transition as string) || 'page'"
         mode="out-in"
       >
         <component :is="Component" :key="route.path" />

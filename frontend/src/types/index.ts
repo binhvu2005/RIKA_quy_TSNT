@@ -18,6 +18,7 @@ export interface Category {
   name: string;
   slug: string;
   type: string;
+  description?: string;
   parent_id?: string;
   ancestors?: string[];
   createdAt?: string;

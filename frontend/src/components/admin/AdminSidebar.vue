@@ -78,7 +78,14 @@ import Logo from '../common/Logo.vue';
 const route = useRoute();
 const isOpen = ref(false);
 
-const menuItems = [
+interface MenuItem {
+  path: string;
+  label: string;
+  icon: string;
+  badge?: string | number;
+}
+
+const menuItems: MenuItem[] = [
   { path: '/admin', label: 'Dashboard', icon: '📊' },
   { path: '/admin/users', label: 'Người dùng', icon: '👥' },
   { path: '/admin/articles', label: 'Bài viết', icon: '📝' },
