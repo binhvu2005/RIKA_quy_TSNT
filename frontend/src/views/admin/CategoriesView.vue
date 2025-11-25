@@ -189,7 +189,7 @@ function editCategory(category: Category) {
   form.name = category.name;
   form.slug = category.slug;
   form.type = category.type;
-  form.description = category.description || '';
+  form.description = (category.description as string | undefined) || '';
   showModal.value = true;
 }
 

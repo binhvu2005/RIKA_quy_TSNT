@@ -2,7 +2,7 @@
   <div id="app" class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
     <router-view v-slot="{ Component, route }">
       <transition
-        :name="(route.meta.transition as string) || 'page'"
+        :name="getTransitionName(route)"
         mode="out-in"
       >
         <component :is="Component" :key="route.path" />
@@ -18,6 +18,10 @@ import { useThemeStore } from './stores/theme';
 
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
+
+function getTransitionName(route: { meta: { transition?: string } }): string {
+  return route.meta.transition || 'page';
+}
 
 onMounted(() => {
   // Khôi phục session khi app load

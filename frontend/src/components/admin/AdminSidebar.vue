@@ -41,7 +41,7 @@
           <span class="text-xl flex-shrink-0">{{ item.icon }}</span>
           <span class="font-medium flex-1">{{ item.label }}</span>
           <span
-            v-if="item.badge"
+            v-if="item.badge !== undefined"
             class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold"
           >
             {{ item.badge }}

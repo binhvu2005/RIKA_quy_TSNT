@@ -26,3 +26,13 @@ declare module '*.svg' {
   export default src;
 }
 
+// Router meta type declaration
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth?: boolean;
+    requiresAdmin?: boolean;
+    requiresGuest?: boolean;
+    transition?: string;
+  }
+}
+
