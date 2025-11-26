@@ -155,18 +155,20 @@ export class CommentsService {
   async update(
     id: string,
     content: string,
-    userId: string,
+    user: { _id: any; roles: string[] },
   ): Promise<CommentDocument> {
     const comment = await this.commentModel.findById(id);
     if (!comment) {
       throw new NotFoundException(`Comment với ID ${id} không tồn tại`);
     }
 
-    // Kiểm tra quyền (chỉ tác giả hoặc admin mới được sửa)
+    // Kiểm tra quyền
+    const userId = user._id.toString();
     const isAuthor = comment.user._id.toString() === userId;
-    // TODO: Kiểm tra role admin
+    const isAdmin = user.roles?.includes('admin') || user.roles?.includes('editor');
 
-    if (!isAuthor) {
+    // Admin và editor có quyền sửa tất cả comments
+    if (!isAuthor && !isAdmin) {
       throw new ForbiddenException('Bạn không có quyền sửa comment này');
     }
 
@@ -186,17 +188,19 @@ export class CommentsService {
    * @param id - Comment ID
    * @param userId - ID user thực hiện
    */
-  async remove(id: string, userId: string): Promise<void> {
+  async remove(id: string, user: { _id: any; roles: string[] }): Promise<void> {
     const comment = await this.commentModel.findById(id);
     if (!comment) {
       throw new NotFoundException(`Comment với ID ${id} không tồn tại`);
     }
 
     // Kiểm tra quyền
+    const userId = user._id.toString();
     const isAuthor = comment.user._id.toString() === userId;
-    // TODO: Kiểm tra role admin
+    const isAdmin = user.roles?.includes('admin') || user.roles?.includes('editor');
 
-    if (!isAuthor) {
+    // Admin và editor có quyền xóa tất cả comments
+    if (!isAuthor && !isAdmin) {
       throw new ForbiddenException('Bạn không có quyền xóa comment này');
     }
 

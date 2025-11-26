@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { User, UserSchema } from './schemas/user.schema';
+import { EmailModule } from '../common/modules/email.module';
 
 /**
  * IAM Module (Identity and Access Management)
@@ -11,6 +12,7 @@ import { User, UserSchema } from './schemas/user.schema';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    EmailModule, // Import để gửi email thông báo khi thay đổi role/status
   ],
   controllers: [UsersController],
   providers: [UsersService],

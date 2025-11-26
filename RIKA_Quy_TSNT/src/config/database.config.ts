@@ -11,7 +11,10 @@ export default registerAs('database', () => ({
     maxPoolSize: 10, // Số lượng kết nối tối đa trong pool
     minPoolSize: 2, // Số lượng kết nối tối thiểu
     socketTimeoutMS: 45000, // Timeout cho socket
-    serverSelectionTimeoutMS: 5000, // Timeout khi chọn server
+    serverSelectionTimeoutMS: 30000, // Timeout khi chọn server (30 giây)
+    connectTimeoutMS: 30000, // Timeout khi kết nối (30 giây)
+    retryWrites: true, // Retry writes nếu fail
+    retryReads: true, // Retry reads nếu fail
   },
 }));
 

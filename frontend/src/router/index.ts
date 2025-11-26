@@ -17,6 +17,12 @@ const router = createRouter({
       meta: { requiresGuest: true },
     },
     {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: () => import('../views/auth/ForgotPasswordView.vue'),
+      meta: { requiresGuest: true },
+    },
+    {
       path: '/',
       component: () => import('../layouts/UserLayout.vue'),
       children: [
@@ -127,8 +133,8 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
   
-  // Kiểm tra auth nếu chưa check
-  if (!authStore.user && authStore.token) {
+  // Kiểm tra auth nếu có token nhưng chưa có user (hoặc user chưa được load)
+  if (authStore.token && !authStore.user) {
     await authStore.checkAuth();
   }
 

@@ -11,14 +11,6 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
 import AdminSidebar from '../components/admin/AdminSidebar.vue';
 import AdminHeader from '../components/admin/AdminHeader.vue';
-import { useThemeStore } from '../stores/theme';
-
-const themeStore = useThemeStore();
-
-onMounted(() => {
-  themeStore.initTheme();
-});
 </script>

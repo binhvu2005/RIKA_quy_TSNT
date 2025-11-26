@@ -26,7 +26,7 @@ function getTransitionName(route: { meta: { transition?: string } }): string {
 onMounted(() => {
   // Khôi phục session khi app load
   authStore.checkAuth();
-  // Đảm bảo theme được khởi tạo
+  // Theme đã được apply trong index.html, chỉ cần sync với store
   themeStore.initTheme();
 });
 </script>

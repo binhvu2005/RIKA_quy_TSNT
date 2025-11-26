@@ -48,7 +48,18 @@
               {{ authStore.user?.email || 'admin@rika.vn' }}
             </p>
           </div>
+          <div 
+            v-if="authStore.user?.profile?.avatar" 
+            class="w-10 h-10 rounded-full overflow-hidden shadow-md ring-2 ring-primary-500 dark:ring-primary-400"
+          >
+            <img 
+              :src="authStore.user.profile.avatar" 
+              :alt="authStore.user.username"
+              class="w-full h-full object-cover"
+            />
+          </div>
           <div
+            v-else
             class="w-10 h-10 bg-primary-600 dark:bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold shadow-md"
           >
             {{ userInitial }}

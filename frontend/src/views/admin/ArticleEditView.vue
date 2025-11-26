@@ -38,11 +38,17 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Thumbnail URL</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Thumbnail</label>
+        <ImageUpload
+          v-model="form.thumbnail"
+          folder="admin"
+          @uploaded="(url) => form.thumbnail = url"
+        />
+        <p class="text-xs text-gray-500 mt-2">Hoặc nhập URL thủ công:</p>
         <input
           v-model="form.thumbnail"
           type="url"
-          class="input"
+          class="input mt-1"
           placeholder="https://example.com/image.jpg"
         />
       </div>
@@ -84,6 +90,7 @@ import { useRoute, useRouter } from 'vue-router';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/auth';
 import { useToast } from 'vue-toastification';
+import ImageUpload from '../../components/common/ImageUpload.vue';
 import type { Category } from '../../types';
 
 const route = useRoute();

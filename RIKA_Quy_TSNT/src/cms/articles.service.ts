@@ -197,24 +197,26 @@ export class ArticlesService {
    * Cập nhật article
    * @param id - Article ID
    * @param updateArticleDto - Dữ liệu cập nhật
-   * @param userId - ID user thực hiện
+   * @param user - User object chứa _id và roles
    * @returns Article đã cập nhật
    */
   async update(
     id: string,
     updateArticleDto: UpdateArticleDto,
-    userId: string,
+    user: { _id: any; roles: string[] },
   ): Promise<ArticleDocument> {
     const article = await this.articleModel.findById(id);
     if (!article) {
       throw new NotFoundException(`Article với ID ${id} không tồn tại`);
     }
 
-    // Kiểm tra quyền (chỉ tác giả hoặc admin mới được sửa)
+    // Kiểm tra quyền
+    const userId = user._id.toString();
     const isAuthor = article.author._id.toString() === userId;
-    // TODO: Kiểm tra role admin từ user service
+    const isAdmin = user.roles?.includes('admin') || user.roles?.includes('editor');
 
-    if (!isAuthor) {
+    // Admin và editor có quyền sửa tất cả bài viết
+    if (!isAuthor && !isAdmin) {
       throw new ForbiddenException('Bạn không có quyền sửa bài viết này');
     }
 
@@ -254,19 +256,21 @@ export class ArticlesService {
   /**
    * Xóa article
    * @param id - Article ID
-   * @param userId - ID user thực hiện
+   * @param user - User object chứa _id và roles
    */
-  async remove(id: string, userId: string): Promise<void> {
+  async remove(id: string, user: { _id: any; roles: string[] }): Promise<void> {
     const article = await this.articleModel.findById(id);
     if (!article) {
       throw new NotFoundException(`Article với ID ${id} không tồn tại`);
     }
 
-    // Kiểm tra quyền (chỉ tác giả hoặc admin mới được xóa)
+    // Kiểm tra quyền
+    const userId = user._id.toString();
     const isAuthor = article.author._id.toString() === userId;
-    // TODO: Kiểm tra role admin
+    const isAdmin = user.roles?.includes('admin') || user.roles?.includes('editor');
 
-    if (!isAuthor) {
+    // Admin và editor có quyền xóa tất cả bài viết
+    if (!isAuthor && !isAdmin) {
       throw new ForbiddenException('Bạn không có quyền xóa bài viết này');
     }
 

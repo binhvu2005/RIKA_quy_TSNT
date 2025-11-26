@@ -40,7 +40,20 @@
               to="/profile"
               class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             >
-              <div class="w-8 h-8 bg-primary-500 dark:bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold shadow-md">
+              <div 
+                v-if="authStore.user?.profile?.avatar" 
+                class="w-8 h-8 rounded-full overflow-hidden shadow-md ring-2 ring-primary-500 dark:ring-primary-400"
+              >
+                <img 
+                  :src="authStore.user.profile.avatar" 
+                  :alt="authStore.user.username"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              <div 
+                v-else
+                class="w-8 h-8 bg-primary-500 dark:bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold shadow-md"
+              >
                 {{ userInitial }}
               </div>
               <span class="hidden md:block">{{ authStore.user?.username }}</span>
@@ -102,8 +115,4 @@ function handleLogout() {
   toast.success('Đã đăng xuất thành công');
   router.push('/');
 }
-
-onMounted(() => {
-  themeStore.initTheme();
-});
 </script>

@@ -11,7 +11,20 @@
       <div class="card mb-6 bg-gradient-to-r from-primary-500 to-primary-600 text-white">
         <div class="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
           <div class="relative">
-            <div class="w-32 h-32 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white text-5xl font-bold border-4 border-white/30 shadow-lg">
+            <div
+              v-if="authStore.user?.profile?.avatar"
+              class="w-32 h-32 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden border-4 border-white/30 shadow-lg"
+            >
+              <img
+                :src="authStore.user.profile.avatar"
+                :alt="authStore.user.username"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div
+              v-else
+              class="w-32 h-32 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white text-5xl font-bold border-4 border-white/30 shadow-lg"
+            >
               {{ userInitial }}
             </div>
             <button
@@ -51,15 +64,14 @@
         class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         @click.self="showAvatarUpload = false"
       >
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
           <h3 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Cập nhật ảnh đại diện</h3>
-          <input
-            type="text"
+          <ImageUpload
             v-model="profile.avatar"
-            class="input mb-4"
-            placeholder="Nhập URL ảnh đại diện"
+            folder="avatars"
+            @uploaded="handleAvatarUploaded"
           />
-          <div class="flex space-x-3">
+          <div class="flex space-x-3 mt-4">
             <button @click="updateProfile" class="btn btn-primary flex-1">Lưu</button>
             <button @click="showAvatarUpload = false" class="btn btn-secondary flex-1">Hủy</button>
           </div>
@@ -296,6 +308,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 import { useToast } from 'vue-toastification';
 import api from '../../services/api';
+import ImageUpload from '../../components/common/ImageUpload.vue';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -431,6 +444,12 @@ async function changePassword() {
   } finally {
     loading.value = false;
   }
+}
+
+function handleAvatarUploaded(url: string) {
+  profile.avatar = url;
+  // Auto save when uploaded
+  updateProfile();
 }
 
 function formatDate(date?: string) {

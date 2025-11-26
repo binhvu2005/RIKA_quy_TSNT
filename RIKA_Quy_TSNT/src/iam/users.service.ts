@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserDocument } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { EmailService } from '../common/modules/email.service';
 
 /**
  * Users Service
@@ -19,6 +20,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private emailService: EmailService,
   ) {}
 
   /**
@@ -195,6 +197,10 @@ export class UsersService {
       delete updateUserDto.avatar;
     }
 
+    // Lưu lại giá trị cũ để so sánh
+    const oldRoles = [...user.roles];
+    const oldStatus = user.status;
+
     const updatedUser = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
       .select('-password')
@@ -202,6 +208,40 @@ export class UsersService {
 
     if (!updatedUser) {
       throw new NotFoundException('User không tồn tại');
+    }
+
+    // Gửi email thông báo nếu role hoặc status thay đổi
+    const userName = updatedUser.profile?.full_name || updatedUser.username;
+    
+    // Kiểm tra role có thay đổi không
+    const rolesChanged = JSON.stringify(oldRoles.sort()) !== JSON.stringify(updatedUser.roles.sort());
+    if (rolesChanged && updateUserDto.roles) {
+      try {
+        await this.emailService.sendRoleChangeNotification(
+          updatedUser.email,
+          userName,
+          oldRoles,
+          updatedUser.roles,
+        );
+      } catch (error) {
+        console.error('Lỗi gửi email thông báo thay đổi role:', error);
+        // Không throw error để không ảnh hưởng đến việc cập nhật user
+      }
+    }
+
+    // Kiểm tra status có thay đổi không
+    if (oldStatus !== updatedUser.status && updateUserDto.status) {
+      try {
+        await this.emailService.sendStatusChangeNotification(
+          updatedUser.email,
+          userName,
+          oldStatus,
+          updatedUser.status,
+        );
+      } catch (error) {
+        console.error('Lỗi gửi email thông báo thay đổi status:', error);
+        // Không throw error để không ảnh hưởng đến việc cập nhật user
+      }
     }
 
     return updatedUser;

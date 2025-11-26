@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Types } from 'mongoose';
 import { UsersService } from '../iam/users.service';
 import { LoginDto } from '../iam/dto/login.dto';
 import { UserProfile } from '../iam/schemas/user.schema';
+import { OtpService } from './otp.service';
 
 /**
  * Validated User Interface
@@ -28,6 +29,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private otpService: OtpService,
   ) {}
 
   /**
@@ -137,5 +139,69 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Token không hợp lệ');
     }
+  }
+
+  /**
+   * Yêu cầu đặt lại mật khẩu - Gửi OTP qua email
+   * @param email - Email người dùng
+   */
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    // Kiểm tra user có tồn tại không
+    const user = await this.usersService.findByUsernameOrEmail(email);
+    if (!user) {
+      // Không tiết lộ thông tin user không tồn tại (bảo mật)
+      return {
+        message: 'Nếu email tồn tại, mã OTP đã được gửi đến email của bạn.',
+      };
+    }
+
+    // Tạo và gửi OTP
+    const userName = user.profile?.full_name || user.username;
+    await this.otpService.createAndSendOtp(email, userName);
+
+    return {
+      message: 'Nếu email tồn tại, mã OTP đã được gửi đến email của bạn.',
+    };
+  }
+
+  /**
+   * Xác thực OTP
+   * @param email - Email người dùng
+   * @param otp - Mã OTP
+   */
+  async verifyOtp(email: string, otp: string): Promise<{ valid: boolean }> {
+    const isValid = await this.otpService.checkOtp(email, otp);
+    return { valid: isValid };
+  }
+
+  /**
+   * Đặt lại mật khẩu mới với OTP
+   * @param email - Email người dùng
+   * @param otp - Mã OTP
+   * @param newPassword - Mật khẩu mới
+   */
+  async resetPassword(
+    email: string,
+    otp: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    // Kiểm tra user có tồn tại không
+    const user = await this.usersService.findByUsernameOrEmail(email);
+    if (!user) {
+      throw new NotFoundException('Người dùng không tồn tại');
+    }
+
+    // Xác thực OTP
+    const isValid = await this.otpService.verifyOtp(email, otp);
+    if (!isValid) {
+      throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
+    }
+
+    // Đặt lại mật khẩu
+    await this.usersService.updatePassword(user._id.toString(), newPassword);
+
+    return {
+      message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.',
+    };
   }
 }

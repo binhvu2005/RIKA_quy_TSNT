@@ -85,7 +85,7 @@ export class CommentsController {
     @Body('content') content: string,
     @CurrentUser() user: any,
   ) {
-    return this.commentsService.update(id, content, user._id.toString());
+    return this.commentsService.update(id, content, user);
   }
 
   /**
@@ -97,7 +97,7 @@ export class CommentsController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    await this.commentsService.remove(id, user._id.toString());
+    await this.commentsService.remove(id, user);
   }
 
   /**

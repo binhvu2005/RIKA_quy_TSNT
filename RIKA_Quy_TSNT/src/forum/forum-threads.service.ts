@@ -148,18 +148,20 @@ export class ForumThreadsService {
   async update(
     id: string,
     updateData: Partial<CreateForumThreadDto>,
-    userId: string,
+    user: { _id: any; roles: string[] },
   ): Promise<ForumThreadDocument> {
     const thread = await this.forumThreadModel.findById(id);
     if (!thread) {
       throw new NotFoundException(`Forum Thread với ID ${id} không tồn tại`);
     }
 
-    // Kiểm tra quyền (chỉ tác giả hoặc admin mới được sửa)
+    // Kiểm tra quyền
+    const userId = user._id.toString();
     const isAuthor = thread.author._id.toString() === userId;
-    // TODO: Kiểm tra role admin
+    const isAdmin = user.roles?.includes('admin') || user.roles?.includes('editor');
 
-    if (!isAuthor) {
+    // Admin và editor có quyền sửa tất cả threads
+    if (!isAuthor && !isAdmin) {
       throw new ForbiddenException('Bạn không có quyền sửa thread này');
     }
 
@@ -180,17 +182,19 @@ export class ForumThreadsService {
    * @param id - Thread ID
    * @param userId - ID user thực hiện
    */
-  async remove(id: string, userId: string): Promise<void> {
+  async remove(id: string, user: { _id: any; roles: string[] }): Promise<void> {
     const thread = await this.forumThreadModel.findById(id);
     if (!thread) {
       throw new NotFoundException(`Forum Thread với ID ${id} không tồn tại`);
     }
 
     // Kiểm tra quyền
+    const userId = user._id.toString();
     const isAuthor = thread.author._id.toString() === userId;
-    // TODO: Kiểm tra role admin
+    const isAdmin = user.roles?.includes('admin') || user.roles?.includes('editor');
 
-    if (!isAuthor) {
+    // Admin và editor có quyền xóa tất cả threads
+    if (!isAuthor && !isAdmin) {
       throw new ForbiddenException('Bạn không có quyền xóa thread này');
     }
 

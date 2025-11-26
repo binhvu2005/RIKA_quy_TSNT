@@ -86,11 +86,7 @@ export class ForumThreadsController {
     @Body() updateData: Partial<CreateForumThreadDto>,
     @CurrentUser() user: any,
   ) {
-    return this.forumThreadsService.update(
-      id,
-      updateData,
-      user._id.toString(),
-    );
+    return this.forumThreadsService.update(id, updateData, user);
   }
 
   /**
@@ -102,7 +98,7 @@ export class ForumThreadsController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    await this.forumThreadsService.remove(id, user._id.toString());
+    await this.forumThreadsService.remove(id, user);
   }
 }
 

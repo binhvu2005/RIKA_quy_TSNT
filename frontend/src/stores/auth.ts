@@ -5,9 +5,40 @@ import type { User } from '../types';
 import { setCookie, getCookie, deleteCookie } from '../utils/cookie';
 
 const TOKEN_COOKIE_NAME = 'auth_token';
+const USER_STORAGE_KEY = 'user_data';
+
+// Khôi phục user từ localStorage
+function getStoredUser(): User | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem(USER_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored) as User;
+    }
+  } catch (error) {
+    console.error('Error loading user from localStorage:', error);
+  }
+  return null;
+}
+
+// Lưu user vào localStorage
+function saveUserToStorage(userData: User | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (userData) {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+    } else {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+  } catch (error) {
+    console.error('Error saving user to localStorage:', error);
+  }
+}
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<User | null>(null);
+  // Khôi phục user từ localStorage ngay khi store được tạo
+  const storedUser = getStoredUser();
+  const user = ref<User | null>(storedUser);
   const token = ref<string | null>(getCookie(TOKEN_COOKIE_NAME));
 
   // Sửa isAuthenticated để check token thay vì chỉ user
@@ -37,12 +68,14 @@ export const useAuthStore = defineStore('auth', () => {
   // Set user
   function setUser(userData: User) {
     user.value = userData;
+    saveUserToStorage(userData);
   }
 
   // Update user (sau khi update profile)
   function updateUser(userData: Partial<User>) {
     if (user.value) {
       user.value = { ...user.value, ...userData };
+      saveUserToStorage(user.value);
     }
   }
 
@@ -69,6 +102,7 @@ export const useAuthStore = defineStore('auth', () => {
   // Logout
   function logout() {
     user.value = null;
+    saveUserToStorage(null);
     clearToken();
   }
 
@@ -79,12 +113,15 @@ export const useAuthStore = defineStore('auth', () => {
     if (!cookieToken) {
       token.value = null;
       user.value = null;
+      saveUserToStorage(null);
       return;
     }
 
     // Cập nhật token từ cookie
     token.value = cookieToken;
 
+    // Nếu đã có user trong localStorage và token hợp lệ, giữ nguyên user
+    // và chỉ cập nhật nếu cần (gọi API để đảm bảo data mới nhất)
     try {
       if (api.defaults.headers.common) {
         api.defaults.headers.common['Authorization'] = `Bearer ${cookieToken}`;

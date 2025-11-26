@@ -9,14 +9,6 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
 import AppHeader from '../components/layout/AppHeader.vue';
 import AppFooter from '../components/layout/AppFooter.vue';
-import { useThemeStore } from '../stores/theme';
-
-const themeStore = useThemeStore();
-
-onMounted(() => {
-  themeStore.initTheme();
-});
 </script>

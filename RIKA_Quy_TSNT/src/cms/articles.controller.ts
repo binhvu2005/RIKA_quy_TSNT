@@ -110,7 +110,7 @@ export class ArticlesController {
     @Body() updateArticleDto: UpdateArticleDto,
     @CurrentUser() user: any,
   ) {
-    return this.articlesService.update(id, updateArticleDto, user._id.toString());
+    return this.articlesService.update(id, updateArticleDto, user);
   }
 
   /**
@@ -123,7 +123,7 @@ export class ArticlesController {
   @Roles('admin', 'editor', 'user')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    await this.articlesService.remove(id, user._id.toString());
+    await this.articlesService.remove(id, user);
   }
 }
 

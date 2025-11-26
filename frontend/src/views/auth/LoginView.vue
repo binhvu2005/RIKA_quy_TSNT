@@ -107,9 +107,9 @@
                 Ghi nhớ đăng nhập
               </label>
             </div>
-            <a href="#" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+            <router-link to="/forgot-password" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
               Quên mật khẩu?
-            </a>
+            </router-link>
           </div>
 
           <!-- Submit Button -->
