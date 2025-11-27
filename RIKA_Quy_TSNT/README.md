@@ -28,25 +28,36 @@ npm install
 
 ### Tạo file .env
 
-Tạo file `.env` trong thư mục `RIKA_Quy_TSNT` với nội dung:
+Tạo file `.env` trong thư mục `RIKA_Quy_TSNT` với nội dung (hoặc copy từ `.env.example`):
 
+**Cho MongoDB Atlas (khuyến nghị):**
 ```env
-# Database Configuration
-MONGODB_URI=mongodb://localhost:27017/rika_portal
+# Database Configuration - MongoDB Atlas
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/rika_portal?retryWrites=true&w=majority
 
 # Server Configuration
 PORT=3000
 NODE_ENV=development
 
 # JWT Configuration
-JWT_SECRET=your-secret-key-change-in-production
+JWT_SECRET=your-secret-key-change-in-production-min-32-characters
 JWT_EXPIRES_IN=7d
 
 # Application
 APP_NAME=RiKa Portal System
 APP_URL=http://localhost:3000
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
 ```
+
+**Cho MongoDB Local:**
+```env
+MONGODB_URI=mongodb://localhost:27017/rika_portal
+```
+
+**Lưu ý khi sử dụng MongoDB Atlas:**
+1. Thay `username`, `password`, `cluster` bằng thông tin thực tế từ MongoDB Atlas
+2. Đảm bảo IP của bạn đã được whitelist trong MongoDB Atlas (Network Access)
+3. Đảm bảo database user đã được tạo với quyền đọc/ghi
 
 ## ⚙️ Cấu hình
 

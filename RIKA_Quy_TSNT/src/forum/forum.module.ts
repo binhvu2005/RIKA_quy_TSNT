@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ForumThreadsController } from './forum-threads.controller';
 import { ForumThreadsService } from './forum-threads.service';
@@ -25,7 +25,7 @@ import { CommonModule } from '../common/common.module';
       { name: Reaction.name, schema: ReactionSchema },
     ]),
     IamModule, // Import để sử dụng UsersService
-    CmsModule, // Import để sử dụng ArticlesService, CategoriesService
+    forwardRef(() => CmsModule), // Import để sử dụng ArticlesService, CategoriesService (dùng forwardRef để tránh circular dependency)
     CommonModule, // Import để sử dụng ProfanityFilterService
   ],
   controllers: [

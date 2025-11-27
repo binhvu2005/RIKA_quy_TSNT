@@ -2,6 +2,8 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -19,6 +21,7 @@ import { CommentsService } from './comments.service';
 export class ReactionsService {
   constructor(
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
+    @Inject(forwardRef(() => ArticlesService))
     private articlesService: ArticlesService,
     private forumThreadsService: ForumThreadsService,
     private commentsService: CommentsService,

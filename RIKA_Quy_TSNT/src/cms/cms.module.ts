@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CategoriesController } from './categories.controller';
 import { CategoriesService } from './categories.service';
@@ -24,7 +24,7 @@ import { ForumModule } from '../forum/forum.module';
       { name: Bookmark.name, schema: BookmarkSchema },
     ]),
     IamModule, // Import để sử dụng UsersService
-    ForumModule, // Import để sử dụng ForumThreadsService
+    forwardRef(() => ForumModule), // Import để sử dụng ForumThreadsService (dùng forwardRef để tránh circular dependency)
   ],
   controllers: [CategoriesController, ArticlesController, BookmarksController],
   providers: [CategoriesService, ArticlesService, BookmarksService],

@@ -10,12 +10,26 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 function setupMongoListeners(connection: Connection) {
   connection.on('connected', () => {
     console.log('✅ MongoDB đã kết nối thành công!');
+    console.log(`   Database: ${connection.db?.databaseName || 'N/A'}`);
   });
   connection.on('error', (err) => {
     console.error('❌ Lỗi kết nối MongoDB:', err.message);
+    console.error('   Chi tiết:', err);
+    
+    // Hướng dẫn khắc phục
+    if (err.message.includes('authentication failed')) {
+      console.error('\n💡 Gợi ý: Kiểm tra lại username và password trong MONGODB_URI');
+    } else if (err.message.includes('ENOTFOUND') || err.message.includes('getaddrinfo')) {
+      console.error('\n💡 Gợi ý: Kiểm tra lại connection string hoặc kết nối internet');
+    } else if (err.message.includes('timeout')) {
+      console.error('\n💡 Gợi ý: Kiểm tra IP whitelist trong MongoDB Atlas hoặc firewall');
+    }
   });
   connection.on('disconnected', () => {
     console.warn('⚠️  MongoDB đã ngắt kết nối');
+  });
+  connection.on('reconnected', () => {
+    console.log('🔄 MongoDB đã kết nối lại');
   });
 }
 

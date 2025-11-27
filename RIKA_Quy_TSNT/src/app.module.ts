@@ -50,6 +50,8 @@ import { UploadModule } from './common/modules/upload.module';
         connectTimeoutMS?: number;
         retryWrites?: boolean;
         retryReads?: boolean;
+        tls?: boolean;
+        tlsAllowInvalidCertificates?: boolean;
       } => {
         const uri = configService.get<string>('database.uri');
         const options = configService.get<{
@@ -60,14 +62,26 @@ import { UploadModule } from './common/modules/upload.module';
           connectTimeoutMS?: number;
           retryWrites?: boolean;
           retryReads?: boolean;
+          tls?: boolean;
+          tlsAllowInvalidCertificates?: boolean;
         }>('database.options');
 
+        if (!uri) {
+          console.error('❌ MONGODB_URI không được cấu hình trong file .env');
+          throw new Error('MONGODB_URI is required');
+        }
+
+        const isAtlas = uri.includes('mongodb.net');
         console.log('📡 Đang kết nối MongoDB...');
+        console.log(`   Loại: ${isAtlas ? 'MongoDB Atlas' : 'MongoDB Local'}`);
         console.log(`   URI: ${uri?.replace(/\/\/.*@/, '//***:***@')}`); // Ẩn password trong log
+        
+        if (isAtlas) {
+          console.log('   ⚠️  Đảm bảo IP của bạn đã được whitelist trong MongoDB Atlas');
+        }
 
         return {
           uri: uri || 'mongodb://localhost:27017/rika_portal',
-
           ...options,
         };
       },
