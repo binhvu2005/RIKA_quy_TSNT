@@ -12,12 +12,12 @@
         <div class="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
           <div class="relative">
             <div
-              v-if="authStore.user?.profile?.avatar"
+              v-if="profile.avatar || authStore.user?.profile?.avatar"
               class="w-32 h-32 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden border-4 border-white/30 shadow-lg"
             >
               <img
-                :src="authStore.user.profile.avatar"
-                :alt="authStore.user.username"
+                :src="profile.avatar || authStore.user?.profile?.avatar"
+                :alt="authStore.user?.username"
                 class="w-full h-full object-cover"
               />
             </div>
@@ -391,12 +391,21 @@ async function updateProfile() {
 
   loading.value = true;
   try {
-    // Chỉ gửi các field có giá trị
+    // Gửi đúng format theo backend: gửi full_name, phone, identity, avatar trực tiếp
+    // Backend sẽ tự động chuyển thành profile object
     const updateData: any = {};
+    
     if (profile.full_name) updateData.full_name = profile.full_name;
     if (profile.phone) updateData.phone = profile.phone;
     if (profile.identity) updateData.identity = profile.identity;
     if (profile.avatar) updateData.avatar = profile.avatar;
+
+    // Chỉ gửi các field có giá trị
+    if (Object.keys(updateData).length === 0) {
+      toast.warning('Không có thông tin nào để cập nhật');
+      loading.value = false;
+      return;
+    }
 
     const response = await api.patch(`/users/${authStore.user._id}`, updateData);
     
@@ -413,7 +422,17 @@ async function updateProfile() {
     }
     
     if (updatedUser) {
+      // Cập nhật user trong store
       authStore.updateUser(updatedUser);
+      
+      // Cập nhật profile local để đồng bộ
+      if (updatedUser.profile) {
+        profile.full_name = updatedUser.profile.full_name || '';
+        profile.phone = updatedUser.profile.phone || '';
+        profile.identity = updatedUser.profile.identity || '';
+        profile.avatar = updatedUser.profile.avatar || '';
+      }
+      
       toast.success('Cập nhật thông tin thành công');
       showAvatarUpload.value = false;
       
@@ -461,10 +480,23 @@ async function changePassword() {
   }
 }
 
-function handleAvatarUploaded(url: string) {
+async function handleAvatarUploaded(url: string) {
   profile.avatar = url;
+  
+  // Cập nhật ngay vào authStore để hiển thị ảnh đại diện ngay lập tức
+  if (authStore.user) {
+    const updatedUser = {
+      ...authStore.user,
+      profile: {
+        ...authStore.user.profile,
+        avatar: url,
+      },
+    };
+    authStore.updateUser(updatedUser);
+  }
+  
   // Auto save when uploaded
-  updateProfile();
+  await updateProfile();
 }
 
 function formatDate(date?: string) {

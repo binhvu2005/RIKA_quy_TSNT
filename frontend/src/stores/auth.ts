@@ -74,7 +74,15 @@ export const useAuthStore = defineStore('auth', () => {
   // Update user (sau khi update profile)
   function updateUser(userData: Partial<User>) {
     if (user.value) {
-      user.value = { ...user.value, ...userData };
+      // Merge nested objects (như profile) đúng cách
+      user.value = {
+        ...user.value,
+        ...userData,
+        profile: {
+          ...user.value.profile,
+          ...(userData.profile || {}),
+        },
+      };
       saveUserToStorage(user.value);
     }
   }
