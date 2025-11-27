@@ -164,16 +164,14 @@ async function toggleLike() {
   }
 
   try {
+    // API createOrUpdate sẽ tự động toggle: nếu đã like thì unlike, chưa like thì like
     await api.post('/reactions', {
       target_model: 'Comment',
       target_id: props.comment._id,
       type: 'like',
     });
     
-    // Toggle like status
-    props.comment.isLiked = !props.comment.isLiked;
-    props.comment.likes = (props.comment.likes || 0) + (props.comment.isLiked ? 1 : -1);
-    
+    // Emit event để parent component refresh và cập nhật like status
     emit('like', props.comment._id);
   } catch (error: any) {
     console.error('Error toggling like:', error);

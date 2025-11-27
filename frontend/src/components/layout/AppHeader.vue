@@ -281,7 +281,11 @@ async function handleNotificationClick(notification: Notification) {
   if (!notification.is_read) {
     try {
       await api.patch(`/notifications/${notification._id}/read`);
-      notification.is_read = true;
+      // Update local state
+      const index = notifications.value.findIndex(n => n._id === notification._id);
+      if (index !== -1) {
+        notifications.value[index].is_read = true;
+      }
       unreadCount.value = Math.max(0, unreadCount.value - 1);
     } catch (error) {
       console.error('Error marking notification as read:', error);

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Notification, NotificationDocument } from './schemas/notification.schema';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 
@@ -20,7 +20,10 @@ export class NotificationsService {
    * @returns Notification đã tạo
    */
   async create(createNotificationDto: CreateNotificationDto): Promise<NotificationDocument> {
-    const notification = new this.notificationModel(createNotificationDto);
+    const notification = new this.notificationModel({
+      ...createNotificationDto,
+      user_id: new Types.ObjectId(createNotificationDto.user_id),
+    });
     return notification.save();
   }
 
@@ -30,7 +33,13 @@ export class NotificationsService {
    * @returns Danh sách notifications đã tạo
    */
   async createMany(notifications: CreateNotificationDto[]): Promise<NotificationDocument[]> {
-    return this.notificationModel.insertMany(notifications);
+    // Convert user_id string to ObjectId
+    const notificationsWithObjectId = notifications.map(notif => ({
+      ...notif,
+      user_id: new Types.ObjectId(notif.user_id),
+    }));
+    const created = await this.notificationModel.insertMany(notificationsWithObjectId);
+    return created as NotificationDocument[];
   }
 
   /**

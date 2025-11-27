@@ -331,27 +331,58 @@ export class UsersService {
    * @returns Buffer chứa file Excel
    */
   async exportToExcel(filters?: any): Promise<Buffer> {
-    // TODO: Implement export to Excel
-    throw new Error('Chức năng xuất Excel chưa được triển khai');
+    // Lấy tất cả users (có thể filter sau)
+    const users = await this.userModel.find({}).exec();
+    return this.excelService.exportUsers(users);
   }
 
   /**
-   * Nhập danh sách users từ Excel (placeholder)
+   * Nhập danh sách users từ Excel
    * @param file - File Excel
    */
   async importFromExcel(file: {
-    fieldname: string;
-    originalname: string;
-    encoding: string;
-    mimetype: string;
-    size: number;
+    fieldname?: string;
+    originalname?: string;
+    encoding?: string;
+    mimetype?: string;
+    size?: number;
     destination?: string;
     filename?: string;
     path?: string;
     buffer?: Buffer;
-  }): Promise<void> {
-    // TODO: Implement import from Excel
-    throw new Error('Chức năng nhập Excel chưa được triển khai');
+  }): Promise<{ success: number; failed: number; errors: string[] }> {
+    if (!file.buffer) {
+      throw new BadRequestException('File buffer không được để trống');
+    }
+
+    const users = await this.excelService.importUsers(file.buffer);
+    let success = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    for (const userData of users) {
+      try {
+        // Kiểm tra user đã tồn tại
+        const existing = await this.userModel.findOne({
+          $or: [{ username: userData.username }, { email: userData.email }],
+        });
+
+        if (existing) {
+          failed++;
+          errors.push(`User ${userData.username || userData.email} đã tồn tại`);
+          continue;
+        }
+
+        // Tạo user mới
+        await this.create(userData);
+        success++;
+      } catch (error: any) {
+        failed++;
+        errors.push(`Lỗi khi tạo user ${userData.username || userData.email}: ${error.message}`);
+      }
+    }
+
+    return { success, failed, errors };
   }
 }
 

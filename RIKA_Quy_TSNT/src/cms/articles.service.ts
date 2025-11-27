@@ -120,11 +120,9 @@ export class ArticlesService {
       query.category = category;
     }
 
-    // Lọc theo status (mặc định chỉ lấy published nếu không có quyền admin)
+    // Lọc theo status (controller đã xử lý logic admin/user, chỉ cần set vào query)
     if (status) {
       query.status = status;
-    } else {
-      query.status = 'published'; // Mặc định chỉ lấy bài đã publish
     }
 
     // Lọc theo tags
@@ -262,10 +260,10 @@ export class ArticlesService {
       query.$or.push({ tags: { $in: article.tags } });
     }
 
-    // Nếu không có category hoặc tags thì lấy bài viết mới nhất
+    // Nếu không có category hoặc tags thì lấy bài viết mới nhất (bỏ điều kiện $or)
     if (query.$or.length === 0) {
       delete query.$or;
-      delete query.$ne;
+      // Vẫn giữ _id: { $ne: articleId } để loại trừ bài viết hiện tại
     }
 
     const relatedArticles = await this.articleModel

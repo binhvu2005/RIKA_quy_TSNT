@@ -11,6 +11,7 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { UsersService } from '../iam/users.service';
 import { ArticlesService } from '../cms/articles.service';
 import { ForumThreadsService } from './forum-threads.service';
+import { ProfanityFilterService } from '../common/services/profanity-filter.service';
 
 /**
  * Comments Service

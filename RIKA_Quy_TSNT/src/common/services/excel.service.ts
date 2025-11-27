@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import * as ExcelJS from 'exceljs';
+// Dynamic import để tránh lỗi khi chưa cài đặt package
+let ExcelJS: any;
+try {
+  ExcelJS = require('exceljs');
+} catch (e) {
+  console.warn('exceljs package chưa được cài đặt. Vui lòng chạy: npm install exceljs');
+}
 
 /**
  * Excel Service
@@ -63,6 +69,9 @@ export class ExcelService {
    * @returns Danh sách users
    */
   async importUsers(fileBuffer: Buffer): Promise<any[]> {
+    if (!ExcelJS) {
+      throw new Error('exceljs package chưa được cài đặt. Vui lòng chạy: npm install exceljs');
+    }
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(fileBuffer);
 
@@ -80,6 +89,9 @@ export class ExcelService {
 
       rowIndex++;
       const values = row.values as any[];
+      
+      // ExcelJS row.values là array với index 0 là empty, nên cần +1
+      // STT=1, Username=2, Email=3, Họ tên=4, SĐT=5, CMND=6, Vai trò=7, Trạng thái=8, Ngày tạo=9
 
       users.push({
         username: values[2]?.toString().trim() || '',
@@ -90,7 +102,7 @@ export class ExcelService {
           phone: values[5]?.toString().trim() || '',
           identity: values[6]?.toString().trim() || '',
         },
-        roles: values[7]?.toString().split(',').map((r: string) => r.trim()) || ['user'],
+        roles: values[7]?.toString().split(',').map((r: string) => r.trim()).filter((r: string) => r) || ['user'],
         status: values[8]?.toString().trim() || 'active',
       });
     });
@@ -104,6 +116,9 @@ export class ExcelService {
    * @returns Buffer chứa file Excel
    */
   async exportScholarships(scholarships: any[]): Promise<Buffer> {
+    if (!ExcelJS) {
+      throw new Error('exceljs package chưa được cài đặt. Vui lòng chạy: npm install exceljs');
+    }
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Scholarships');
 

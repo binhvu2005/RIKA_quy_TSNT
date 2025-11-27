@@ -34,5 +34,9 @@ declare module 'vue-router' {
     requiresGuest?: boolean;
     transition?: string;
   }
+  
+  // Ensure useRouter and useRoute are exported
+  export function useRouter(): any;
+  export function useRoute(): any;
 }
 
