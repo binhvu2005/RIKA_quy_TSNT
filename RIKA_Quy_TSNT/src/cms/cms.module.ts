@@ -4,9 +4,13 @@ import { CategoriesController } from './categories.controller';
 import { CategoriesService } from './categories.service';
 import { ArticlesController } from './articles.controller';
 import { ArticlesService } from './articles.service';
+import { BookmarksController } from './bookmarks.controller';
+import { BookmarksService } from './bookmarks.service';
 import { Category, CategorySchema } from './schemas/category.schema';
 import { Article, ArticleSchema } from './schemas/article.schema';
+import { Bookmark, BookmarkSchema } from './schemas/bookmark.schema';
 import { IamModule } from '../iam/iam.module';
+import { ForumModule } from '../forum/forum.module';
 
 /**
  * CMS Module (Content Management System)
@@ -17,12 +21,14 @@ import { IamModule } from '../iam/iam.module';
     MongooseModule.forFeature([
       { name: Category.name, schema: CategorySchema },
       { name: Article.name, schema: ArticleSchema },
+      { name: Bookmark.name, schema: BookmarkSchema },
     ]),
     IamModule, // Import để sử dụng UsersService
+    ForumModule, // Import để sử dụng ForumThreadsService
   ],
-  controllers: [CategoriesController, ArticlesController],
-  providers: [CategoriesService, ArticlesService],
-  exports: [CategoriesService, ArticlesService],
+  controllers: [CategoriesController, ArticlesController, BookmarksController],
+  providers: [CategoriesService, ArticlesService, BookmarksService],
+  exports: [CategoriesService, ArticlesService, BookmarksService],
 })
 export class CmsModule {}
 

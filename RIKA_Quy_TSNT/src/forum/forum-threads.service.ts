@@ -12,6 +12,7 @@ import {
 import { CreateForumThreadDto } from './dto/create-forum-thread.dto';
 import { UsersService } from '../iam/users.service';
 import { CategoriesService } from '../cms/categories.service';
+import { ProfanityFilterService } from '../common/services/profanity-filter.service';
 
 /**
  * Forum Threads Service
@@ -24,6 +25,7 @@ export class ForumThreadsService {
     private forumThreadModel: Model<ForumThreadDocument>,
     private usersService: UsersService,
     private categoriesService: CategoriesService,
+    private profanityFilterService: ProfanityFilterService,
   ) {}
 
   /**
@@ -42,6 +44,10 @@ export class ForumThreadsService {
     // Lấy thông tin user để tạo author snapshot
     const user = await this.usersService.findOne(userId);
 
+    // Lọc ngôn từ độc hại trong title và content
+    const titleFilter = this.profanityFilterService.filter(createForumThreadDto.title);
+    const contentFilter = this.profanityFilterService.filter(createForumThreadDto.content);
+
     // Tạo author snapshot
     const authorSnapshot = {
       _id: user._id,
@@ -51,7 +57,10 @@ export class ForumThreadsService {
 
     const thread = new this.forumThreadModel({
       ...createForumThreadDto,
+      title: titleFilter.filteredText,
+      content: contentFilter.filteredText,
       author: authorSnapshot,
+      is_approved: !titleFilter.hasProfanity && !contentFilter.hasProfanity, // Tự động reject nếu có ngôn từ độc hại
       stats: {
         replies_count: 0,
         views_count: 0,

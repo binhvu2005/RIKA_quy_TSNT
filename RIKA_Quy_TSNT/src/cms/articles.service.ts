@@ -83,6 +83,11 @@ export class ArticlesService {
    * @param category - Lọc theo category
    * @param status - Lọc theo trạng thái
    * @param tags - Lọc theo tags
+   * @param author - Lọc theo tác giả (author._id)
+   * @param startDate - Ngày bắt đầu
+   * @param endDate - Ngày kết thúc
+   * @param sortBy - Sắp xếp theo field
+   * @param sortOrder - Thứ tự sắp xếp (asc/desc)
    * @returns Danh sách articles và metadata phân trang
    */
   async findAll(
@@ -92,13 +97,22 @@ export class ArticlesService {
     category?: string,
     status?: string,
     tags?: string[],
+    author?: string,
+    startDate?: Date,
+    endDate?: Date,
+    sortBy?: string,
+    sortOrder?: string,
   ) {
     const skip = (page - 1) * limit;
     const query: any = {};
 
-    // Tìm kiếm text
+    // Tìm kiếm text (title, content)
     if (search) {
-      query.$text = { $search: search };
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } },
+        { tags: { $in: [new RegExp(search, 'i')] } },
+      ];
     }
 
     // Lọc theo category
@@ -118,13 +132,37 @@ export class ArticlesService {
       query.tags = { $in: tags };
     }
 
+    // Lọc theo tác giả
+    if (author) {
+      query['author._id'] = author;
+    }
+
+    // Lọc theo ngày tháng
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = startDate;
+      }
+      if (endDate) {
+        query.createdAt.$lte = endDate;
+      }
+    }
+
+    // Build sort object
+    const sortObj: any = {};
+    if (sortBy) {
+      sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    } else {
+      sortObj.createdAt = -1; // Default sort by createdAt desc
+    }
+
     const [articles, total] = await Promise.all([
       this.articleModel
         .find(query)
         .populate('category', 'name slug')
         .skip(skip)
         .limit(limit)
-        .sort({ createdAt: -1 })
+        .sort(sortObj)
         .exec(),
       this.articleModel.countDocuments(query).exec(),
     ]);
@@ -191,6 +229,53 @@ export class ArticlesService {
     }
 
     return article;
+  }
+
+  /**
+   * Lấy danh sách bài viết liên quan
+   * @param articleId - ID bài viết hiện tại
+   * @param limit - Số lượng bài viết liên quan (mặc định 5)
+   * @returns Danh sách bài viết liên quan
+   */
+  async getRelatedArticles(
+    articleId: string,
+    limit: number = 5,
+  ): Promise<ArticleDocument[]> {
+    const article = await this.articleModel.findById(articleId);
+    if (!article) {
+      throw new NotFoundException(`Article với ID ${articleId} không tồn tại`);
+    }
+
+    const query: any = {
+      _id: { $ne: articleId },
+      status: 'published',
+      $or: [],
+    };
+
+    // Tìm theo category
+    if (article.category) {
+      query.$or.push({ category: article.category });
+    }
+
+    // Tìm theo tags (ít nhất 1 tag trùng)
+    if (article.tags && article.tags.length > 0) {
+      query.$or.push({ tags: { $in: article.tags } });
+    }
+
+    // Nếu không có category hoặc tags thì lấy bài viết mới nhất
+    if (query.$or.length === 0) {
+      delete query.$or;
+      delete query.$ne;
+    }
+
+    const relatedArticles = await this.articleModel
+      .find(query)
+      .populate('category', 'name slug')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .exec();
+
+    return relatedArticles;
   }
 
   /**

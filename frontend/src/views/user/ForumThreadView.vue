@@ -21,7 +21,30 @@
             📌 Đã ghim
           </span>
         </div>
-        <h1 class="text-3xl font-bold mb-4">{{ thread.title }}</h1>
+        <div class="flex items-start justify-between mb-4">
+          <h1 class="text-3xl font-bold flex-1">{{ thread.title }}</h1>
+          <button
+            v-if="authStore.isAuthenticated"
+            @click="toggleBookmark"
+            class="ml-4 p-3 rounded-full hover:bg-gray-100 transition-colors"
+            :class="{ 'text-yellow-500': isBookmarked, 'text-gray-400': !isBookmarked }"
+            title="Lưu bài viết"
+          >
+            <svg
+              class="w-6 h-6"
+              :fill="isBookmarked ? 'currentColor' : 'none'"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+              />
+            </svg>
+          </button>
+        </div>
         <div class="flex items-center space-x-4 text-gray-600 mb-6">
           <div class="flex items-center space-x-2">
             <img
@@ -116,6 +139,8 @@ const thread = ref<ForumThread | null>(null);
 const comments = ref<Comment[]>([]);
 const newComment = ref('');
 const sortBy = ref('newest');
+const isBookmarked = ref(false);
+const checkingBookmark = ref(false);
 
 const totalComments = computed(() => {
   const countReplies = (comment: Comment): number => {
@@ -153,7 +178,7 @@ const sortedComments = computed(() => {
 onMounted(async () => {
   await fetchThread();
   if (thread.value) {
-    await fetchComments();
+    await Promise.all([fetchComments(), checkBookmark()]);
   }
 });
 
@@ -302,6 +327,44 @@ function getCategoryName(category?: string | { _id: string; name: string; slug?:
   if (!category) return '';
   if (typeof category === 'string') return '';
   return category.name || '';
+}
+
+async function checkBookmark() {
+  if (!thread.value || !authStore.isAuthenticated) return;
+  try {
+    const response = await api.get(`/bookmarks/check/ForumThread/${thread.value._id}`);
+    isBookmarked.value = response.data?.data?.isBookmarked || response.data?.isBookmarked || false;
+  } catch (error) {
+    console.error('Error checking bookmark:', error);
+  }
+}
+
+async function toggleBookmark() {
+  if (!thread.value || !authStore.isAuthenticated) {
+    toast.warning('Vui lòng đăng nhập để lưu bài viết');
+    return;
+  }
+
+  checkingBookmark.value = true;
+  try {
+    if (isBookmarked.value) {
+      await api.delete(`/bookmarks/ForumThread/${thread.value._id}`);
+      isBookmarked.value = false;
+      toast.success('Đã bỏ lưu bài viết');
+    } else {
+      await api.post('/bookmarks', {
+        target_model: 'ForumThread',
+        target_id: thread.value._id,
+      });
+      isBookmarked.value = true;
+      toast.success('Đã lưu bài viết');
+    }
+  } catch (error: any) {
+    console.error('Error toggling bookmark:', error);
+    toast.error(error.response?.data?.message || 'Không thể lưu bài viết');
+  } finally {
+    checkingBookmark.value = false;
+  }
 }
 
 function formatDate(date?: string) {

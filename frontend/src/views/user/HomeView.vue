@@ -196,6 +196,66 @@
       </div>
     </section>
 
+    <!-- Highlight Articles -->
+    <section
+      v-if="highlightArticles.length > 0"
+      class="py-20 bg-gradient-to-br from-primary-50 to-blue-50 dark:from-gray-800 dark:to-gray-900"
+    >
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+            Tin tức nổi bật
+          </h2>
+          <p class="text-gray-600 dark:text-gray-400">
+            Những bài viết được quan tâm nhiều nhất
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <article
+            v-for="(article, index) in highlightArticles"
+            :key="article._id"
+            class="card bg-white dark:bg-gray-800 cursor-pointer transform hover:scale-105 hover:-translate-y-2 transition-all duration-500 hover:shadow-2xl group overflow-hidden"
+            @click="$router.push(`/articles/${article.slug}`)"
+          >
+            <div
+              v-if="article.thumbnail"
+              class="w-full h-56 bg-gray-200 dark:bg-gray-700 rounded-t-lg mb-4 overflow-hidden relative"
+            >
+              <img
+                :src="article.thumbnail"
+                :alt="article.title"
+                class="w-full h-full object-cover group-hover:scale-125 transition-transform duration-700"
+              />
+              <div
+                class="absolute top-4 left-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold"
+              >
+                ⭐ Nổi bật
+              </div>
+            </div>
+            <div v-else class="w-full h-56 bg-gradient-to-br from-primary-400 to-primary-600 rounded-t-lg mb-4 flex items-center justify-center">
+              <span class="text-6xl text-white/50">📰</span>
+            </div>
+            <div class="flex items-center space-x-2 mb-3">
+              <span class="text-xs bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full font-medium">
+                {{ getCategoryName(article.category) || 'Tin tức' }}
+              </span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(article.createdAt) }}</span>
+            </div>
+            <h3 class="text-xl font-bold mb-3 line-clamp-2 text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+              {{ article.title }}
+            </h3>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
+              {{ stripHtml(article.content) }}
+            </p>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-500 dark:text-gray-400">👁️ {{ article.stats?.views || 0 }}</span>
+              <span class="text-primary-600 dark:text-primary-400 font-medium">Đọc thêm →</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <!-- Latest Articles -->
     <section
       ref="articlesSection"
@@ -425,6 +485,7 @@ import banner3 from '../../assets/Banner2.jpg';
 
 const loading = ref(true);
 const latestArticles = ref<Article[]>([]);
+const highlightArticles = ref<Article[]>([]);
 const categories = ref<Category[]>([]);
 const currentBanner = ref(0);
 let bannerInterval: ReturnType<typeof setInterval> | null = null;
@@ -565,7 +626,32 @@ onMounted(async () => {
     setupScrollAnimations();
   }, 100);
 
-  // Fetch articles
+  // Fetch highlight articles (sorted by views and likes)
+  try {
+    const highlightResponse = await api.get('/articles', {
+      params: { page: 1, limit: 3, status: 'published' },
+    });
+    let highlightData: Article[] = [];
+    if (highlightResponse.data?.data?.data) {
+      highlightData = highlightResponse.data.data.data;
+    } else if (highlightResponse.data?.data) {
+      highlightData = Array.isArray(highlightResponse.data.data) ? highlightResponse.data.data : [];
+    } else if (Array.isArray(highlightResponse.data)) {
+      highlightData = highlightResponse.data;
+    }
+    // Sort by views + likes to get most popular
+    highlightArticles.value = highlightData
+      .sort((a, b) => {
+        const aScore = (a.stats?.views || 0) + (a.stats?.likes || 0);
+        const bScore = (b.stats?.views || 0) + (b.stats?.likes || 0);
+        return bScore - aScore;
+      })
+      .slice(0, 3);
+  } catch (error: any) {
+    console.error('Error fetching highlight articles:', error);
+  }
+
+  // Fetch latest articles
   try {
     const response = await api.get('/articles', {
       params: { page: 1, limit: 6, status: 'published' },

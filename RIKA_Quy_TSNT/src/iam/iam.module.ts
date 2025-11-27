@@ -4,6 +4,7 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { User, UserSchema } from './schemas/user.schema';
 import { EmailModule } from '../common/modules/email.module';
+import { CommonModule } from '../common/common.module';
 
 /**
  * IAM Module (Identity and Access Management)
@@ -13,6 +14,7 @@ import { EmailModule } from '../common/modules/email.module';
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     EmailModule, // Import để gửi email thông báo khi thay đổi role/status
+    CommonModule, // Import để sử dụng ExcelService
   ],
   controllers: [UsersController],
   providers: [UsersService],

@@ -16,7 +16,30 @@
           </router-link>
           <span class="text-sm text-gray-500">{{ formatDate(article.createdAt) }}</span>
         </div>
-        <h1 class="text-4xl font-bold mb-4">{{ article.title }}</h1>
+        <div class="flex items-start justify-between mb-4">
+          <h1 class="text-4xl font-bold flex-1">{{ article.title }}</h1>
+          <button
+            v-if="authStore.isAuthenticated"
+            @click="toggleBookmark"
+            class="ml-4 p-3 rounded-full hover:bg-gray-100 transition-colors"
+            :class="{ 'text-yellow-500': isBookmarked, 'text-gray-400': !isBookmarked }"
+            title="Lưu bài viết"
+          >
+            <svg
+              class="w-6 h-6"
+              :fill="isBookmarked ? 'currentColor' : 'none'"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+              />
+            </svg>
+          </button>
+        </div>
         <div class="flex items-center space-x-4 text-gray-600">
           <div class="flex items-center space-x-2">
             <div class="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold">
@@ -51,6 +74,35 @@
           </span>
         </div>
       </div>
+
+      <!-- Related Articles -->
+      <section v-if="relatedArticles.length > 0" class="mt-12 border-t pt-8">
+        <h2 class="text-2xl font-bold mb-6">Bài viết liên quan</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <router-link
+            v-for="related in relatedArticles"
+            :key="related._id"
+            :to="`/articles/${related._id}`"
+            class="card hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+          >
+            <div v-if="related.thumbnail" class="w-full h-48 mb-4 rounded-lg overflow-hidden">
+              <img
+                :src="related.thumbnail"
+                :alt="related.title"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div v-else class="w-full h-48 mb-4 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center">
+              <span class="text-4xl">📰</span>
+            </div>
+            <h3 class="text-lg font-semibold mb-2 line-clamp-2">{{ related.title }}</h3>
+            <div class="flex items-center justify-between text-sm text-gray-500">
+              <span>{{ formatDate(related.createdAt) }}</span>
+              <span>👁️ {{ related.stats?.views || 0 }}</span>
+            </div>
+          </router-link>
+        </div>
+      </section>
 
       <!-- Comments Section -->
       <section class="mt-12 border-t pt-8">
@@ -164,6 +216,7 @@ const toast = useToast();
 
 const loading = ref(true);
 const article = ref<Article | null>(null);
+const relatedArticles = ref<Article[]>([]);
 const comments = ref<Comment[]>([]);
 const newComment = ref('');
 const showComments = ref(true); // Hiển thị/ẩn toàn bộ phần bình luận
@@ -187,7 +240,7 @@ const displayedComments = computed(() => {
 onMounted(async () => {
   await fetchArticle();
   if (article.value) {
-    await fetchComments();
+    await Promise.all([fetchComments(), fetchRelatedArticles(), checkBookmark()]);
   }
 });
 
@@ -201,6 +254,56 @@ async function fetchArticle() {
     toast.error('Không tìm thấy bài viết');
   } finally {
     loading.value = false;
+  }
+}
+
+async function fetchRelatedArticles() {
+  if (!article.value) return;
+  try {
+    const response = await api.get(`/articles/${article.value._id}/related`, {
+      params: { limit: 6 },
+    });
+    relatedArticles.value = response.data?.data || response.data || [];
+  } catch (error) {
+    console.error('Error fetching related articles:', error);
+  }
+}
+
+async function checkBookmark() {
+  if (!article.value || !authStore.isAuthenticated) return;
+  try {
+    const response = await api.get(`/bookmarks/check/Article/${article.value._id}`);
+    isBookmarked.value = response.data?.data?.isBookmarked || response.data?.isBookmarked || false;
+  } catch (error) {
+    console.error('Error checking bookmark:', error);
+  }
+}
+
+async function toggleBookmark() {
+  if (!article.value || !authStore.isAuthenticated) {
+    toast.warning('Vui lòng đăng nhập để lưu bài viết');
+    return;
+  }
+
+  checkingBookmark.value = true;
+  try {
+    if (isBookmarked.value) {
+      await api.delete(`/bookmarks/Article/${article.value._id}`);
+      isBookmarked.value = false;
+      toast.success('Đã bỏ lưu bài viết');
+    } else {
+      await api.post('/bookmarks', {
+        target_model: 'Article',
+        target_id: article.value._id,
+      });
+      isBookmarked.value = true;
+      toast.success('Đã lưu bài viết');
+    }
+  } catch (error: any) {
+    console.error('Error toggling bookmark:', error);
+    toast.error(error.response?.data?.message || 'Không thể lưu bài viết');
+  } finally {
+    checkingBookmark.value = false;
   }
 }
 

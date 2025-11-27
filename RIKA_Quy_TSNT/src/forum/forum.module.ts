@@ -11,6 +11,7 @@ import { Comment, CommentSchema } from './schemas/comment.schema';
 import { Reaction, ReactionSchema } from './schemas/reaction.schema';
 import { IamModule } from '../iam/iam.module';
 import { CmsModule } from '../cms/cms.module';
+import { CommonModule } from '../common/common.module';
 
 /**
  * Forum Module
@@ -25,6 +26,7 @@ import { CmsModule } from '../cms/cms.module';
     ]),
     IamModule, // Import để sử dụng UsersService
     CmsModule, // Import để sử dụng ArticlesService, CategoriesService
+    CommonModule, // Import để sử dụng ProfanityFilterService
   ],
   controllers: [
     ForumThreadsController,
@@ -32,7 +34,7 @@ import { CmsModule } from '../cms/cms.module';
     ReactionsController,
   ],
   providers: [ForumThreadsService, CommentsService, ReactionsService],
-  exports: [CommentsService, ReactionsService],
+  exports: [ForumThreadsService, CommentsService, ReactionsService],
 })
 export class ForumModule {}
 

@@ -23,6 +23,7 @@ export class CommentsService {
     private usersService: UsersService,
     private articlesService: ArticlesService,
     private forumThreadsService: ForumThreadsService,
+    private profanityFilterService: ProfanityFilterService,
   ) {}
 
   /**
@@ -62,6 +63,11 @@ export class CommentsService {
     // Lấy thông tin user để tạo user snapshot
     const user = await this.usersService.findOne(userId);
 
+    // Lọc ngôn từ độc hại
+    const filterResult = this.profanityFilterService.filter(createCommentDto.content);
+    const filteredContent = filterResult.filteredText;
+    const isApproved = !filterResult.hasProfanity; // Tự động reject nếu có ngôn từ độc hại
+
     // Tạo user snapshot
     const userSnapshot = {
       _id: user._id,
@@ -71,8 +77,9 @@ export class CommentsService {
 
     const comment = new this.commentModel({
       ...createCommentDto,
+      content: filteredContent,
       user: userSnapshot,
-      is_approved: true, // Tự động approve, có thể thay đổi logic sau
+      is_approved: isApproved,
     });
 
     const savedComment = await comment.save();

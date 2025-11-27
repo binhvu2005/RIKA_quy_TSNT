@@ -10,7 +10,12 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Res,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -136,9 +141,14 @@ export class UsersController {
    */
   @Get('export/excel')
   @Roles('admin')
-  async exportToExcel(@Query() filters: any) {
-    // TODO: Implement export
-    return this.usersService.exportToExcel(filters);
+  async exportToExcel(@Query() filters: any, @Res() res: any) {
+    const buffer = await this.usersService.exportToExcel(filters);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', 'attachment; filename=users.xlsx');
+    res.send(buffer);
   }
 
   /**
@@ -148,9 +158,12 @@ export class UsersController {
    */
   @Post('import/excel')
   @Roles('admin')
-  async importFromExcel(@Body() file: any) {
-    // TODO: Implement import
-    return this.usersService.importFromExcel(file);
+  @UseInterceptors(FileInterceptor('file'))
+  async importFromExcel(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('File không được để trống');
+    }
+    return this.usersService.importFromExcel({ buffer: file.buffer });
   }
 }
 

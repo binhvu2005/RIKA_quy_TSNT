@@ -45,7 +45,7 @@ export class ArticlesController {
 
   /**
    * Lấy danh sách articles với phân trang và filter
-   * GET /articles?page=1&limit=10&search=keyword&category=id&status=published&tags=tag1,tag2
+   * GET /articles?page=1&limit=10&search=keyword&category=id&status=published&tags=tag1,tag2&author=authorId&startDate=2024-01-01&endDate=2024-12-31&sortBy=createdAt&sortOrder=desc
    * Public endpoint (nhưng chỉ trả về published nếu không có quyền admin)
    */
   @Get()
@@ -57,6 +57,11 @@ export class ArticlesController {
     @Query('category') category?: string,
     @Query('status') status?: string,
     @Query('tags') tags?: string,
+    @Query('author') author?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
     @CurrentUser() user?: any,
   ) {
     // Nếu không phải admin/editor thì chỉ lấy published
@@ -72,6 +77,11 @@ export class ArticlesController {
       category,
       finalStatus,
       tagsArray,
+      author,
+      startDate ? new Date(startDate) : undefined,
+      endDate ? new Date(endDate) : undefined,
+      sortBy,
+      sortOrder,
     );
   }
 
@@ -95,6 +105,23 @@ export class ArticlesController {
   @Public()
   async findBySlug(@Param('slug') slug: string) {
     return this.articlesService.findBySlug(slug, true); // Tăng lượt xem
+  }
+
+  /**
+   * Lấy danh sách bài viết liên quan
+   * GET /articles/:id/related?limit=5
+   * Public endpoint
+   */
+  @Get(':id/related')
+  @Public()
+  async getRelatedArticles(
+    @Param('id') id: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.articlesService.getRelatedArticles(
+      id,
+      limit ? parseInt(limit) : 5,
+    );
   }
 
   /**

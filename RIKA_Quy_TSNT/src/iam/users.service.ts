@@ -11,6 +11,7 @@ import { User, UserDocument } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { EmailService } from '../common/modules/email.service';
+import { ExcelService } from '../common/services/excel.service';
 
 /**
  * Users Service
@@ -21,6 +22,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private emailService: EmailService,
+    private excelService: ExcelService,
   ) {}
 
   /**

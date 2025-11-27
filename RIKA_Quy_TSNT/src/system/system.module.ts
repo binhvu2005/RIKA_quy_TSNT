@@ -9,6 +9,9 @@ import { AuditLogsService } from './audit-logs.service';
 import { SystemSetting, SystemSettingSchema } from './schemas/system-setting.schema';
 import { MediaFile, MediaFileSchema } from './schemas/media-file.schema';
 import { AuditLog, AuditLogSchema } from './schemas/audit-log.schema';
+import { Notification, NotificationSchema } from './schemas/notification.schema';
+import { NotificationsController } from './notifications.controller';
+import { NotificationsService } from './notifications.service';
 
 /**
  * System Module
@@ -20,22 +23,26 @@ import { AuditLog, AuditLogSchema } from './schemas/audit-log.schema';
       { name: SystemSetting.name, schema: SystemSettingSchema },
       { name: MediaFile.name, schema: MediaFileSchema },
       { name: AuditLog.name, schema: AuditLogSchema },
+      { name: Notification.name, schema: NotificationSchema },
     ]),
   ],
   controllers: [
     SystemSettingsController,
     MediaFilesController,
     AuditLogsController,
+    NotificationsController,
   ],
   providers: [
     SystemSettingsService,
     MediaFilesService,
     AuditLogsService,
+    NotificationsService,
   ],
   exports: [
     SystemSettingsService,
     MediaFilesService,
     AuditLogsService,
+    NotificationsService,
   ],
 })
 export class SystemModule {}

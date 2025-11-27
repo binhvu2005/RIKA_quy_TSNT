@@ -28,13 +28,10 @@
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Nội dung *</label>
-        <textarea
+        <RichTextEditor
           v-model="form.content"
-          rows="15"
-          required
-          class="input"
-          placeholder="Nhập nội dung bài viết (HTML được hỗ trợ)"
-        ></textarea>
+          placeholder="Nhập nội dung bài viết..."
+        />
       </div>
 
       <div>
@@ -91,6 +88,7 @@ import api from '../../services/api';
 import { useAuthStore } from '../../stores/auth';
 import { useToast } from 'vue-toastification';
 import ImageUpload from '../../components/common/ImageUpload.vue';
+import RichTextEditor from '../../components/admin/RichTextEditor.vue';
 import type { Category } from '../../types';
 
 const route = useRoute();
