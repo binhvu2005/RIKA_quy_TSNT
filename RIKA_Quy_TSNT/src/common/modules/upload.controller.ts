@@ -21,9 +21,10 @@ export class UploadController {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
 
   /**
-   * Upload ảnh đơn
+   * Upload ảnh đơn hoặc tài liệu
    * POST /upload/image
    * Yêu cầu: Authentication (cả admin và user đều có thể upload)
+   * Hỗ trợ: ảnh, PDF, Word, Excel
    */
   @UseGuards(JwtAuthGuard)
   @Post('image')
@@ -36,16 +37,25 @@ export class UploadController {
       throw new BadRequestException('Không có file được tải lên');
     }
 
-    // Tạo folder dựa trên role của user
-    const folder = user.roles?.includes('admin')
-      ? 'admin'
-      : 'users';
+    // Xác định folder dựa trên loại file và role của user
+    let folder: string;
+    if (user.roles?.includes('admin')) {
+      folder = 'admin';
+    } else {
+      // Nếu là document (PDF, Word, Excel) thì lưu vào folder documents
+      const isDocument = file.mimetype.includes('pdf') || 
+                        file.mimetype.includes('word') || 
+                        file.mimetype.includes('excel') ||
+                        file.mimetype.includes('msword') ||
+                        file.mimetype.includes('spreadsheet');
+      folder = isDocument ? 'documents' : 'users';
+    }
 
-    const imageUrl = await this.cloudinaryService.uploadImage(file, folder);
+    const fileUrl = await this.cloudinaryService.uploadImage(file, folder);
 
     return {
-      message: 'Upload ảnh thành công',
-      url: imageUrl,
+      message: 'Upload file thành công',
+      url: fileUrl,
     };
   }
 

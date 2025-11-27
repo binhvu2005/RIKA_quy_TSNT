@@ -4,11 +4,14 @@ import { FundsController } from './funds.controller';
 import { FundsService } from './funds.service';
 import { FinanceTransactionsController } from './finance-transactions.controller';
 import { FinanceTransactionsService } from './finance-transactions.service';
+import { BankAccountsController } from './bank-accounts.controller';
+import { BankAccountsService } from './bank-accounts.service';
 import { Fund, FundSchema } from './schemas/fund.schema';
 import {
   FinanceTransaction,
   FinanceTransactionSchema,
 } from './schemas/finance-transaction.schema';
+import { BankAccount, BankAccountSchema } from './schemas/bank-account.schema';
 
 /**
  * Finance Module
@@ -19,11 +22,12 @@ import {
     MongooseModule.forFeature([
       { name: Fund.name, schema: FundSchema },
       { name: FinanceTransaction.name, schema: FinanceTransactionSchema },
+      { name: BankAccount.name, schema: BankAccountSchema },
     ]),
   ],
-  controllers: [FundsController, FinanceTransactionsController],
-  providers: [FundsService, FinanceTransactionsService],
-  exports: [FundsService, FinanceTransactionsService],
+  controllers: [FundsController, FinanceTransactionsController, BankAccountsController],
+  providers: [FundsService, FinanceTransactionsService, BankAccountsService],
+  exports: [FundsService, FinanceTransactionsService, BankAccountsService],
 })
 export class FinanceModule {}
 

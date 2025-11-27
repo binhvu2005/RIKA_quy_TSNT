@@ -48,6 +48,12 @@ const router = createRouter({
           component: () => import('../views/user/ForumView.vue'),
         },
         {
+          path: 'forum/new',
+          name: 'forum-new',
+          component: () => import('../views/user/ForumNewView.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
           path: 'forum/:id',
           name: 'forum-thread',
           component: () => import('../views/user/ForumThreadView.vue'),
@@ -56,6 +62,22 @@ const router = createRouter({
           path: 'scholarships',
           name: 'scholarships',
           component: () => import('../views/user/ScholarshipsView.vue'),
+        },
+        {
+          path: 'scholarships/:id',
+          name: 'scholarship-detail',
+          component: () => import('../views/user/ScholarshipDetailView.vue'),
+        },
+        {
+          path: 'scholarships/:id/apply',
+          name: 'scholarship-apply',
+          component: () => import('../views/user/ScholarshipApplicationView.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'contributions',
+          name: 'contributions',
+          component: () => import('../views/user/ContributionsView.vue'),
         },
         {
           path: 'profile',

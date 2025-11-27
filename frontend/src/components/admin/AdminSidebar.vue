@@ -86,10 +86,10 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { path: '/admin', label: 'Dashboard', icon: '📊' },
+  { path: '/admin', label: 'Tổng quan', icon: '📊' },
   { path: '/admin/users', label: 'Người dùng', icon: '👥' },
   { path: '/admin/articles', label: 'Bài viết', icon: '📝' },
-  { path: '/admin/categories', label: 'Danh mục', icon: '📁' },
+  { path: '/admin/categories', label: 'Quản lý chuyên mục', icon: '📁' },
   { path: '/admin/forum', label: 'Diễn đàn', icon: '💬' },
   { path: '/admin/finance', label: 'Tài chính', icon: '💰' },
   { path: '/admin/scholarships', label: 'Học bổng', icon: '🎓' },

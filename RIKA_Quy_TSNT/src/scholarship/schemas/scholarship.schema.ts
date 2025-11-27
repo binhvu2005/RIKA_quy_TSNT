@@ -51,6 +51,10 @@ export class Scholarship {
   })
   budget: mongoose.Types.Decimal128;
 
+  /** Số lượng học bổng */
+  @Prop({ type: Number, required: true, min: 1 })
+  quantity: number;
+
   /** Cấu hình tiêu chí chấm điểm - Embedded Config */
   @Prop({ type: [Criteria], default: [] })
   criteria: Criteria[];

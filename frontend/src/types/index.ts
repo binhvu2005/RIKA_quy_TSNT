@@ -54,19 +54,20 @@ export interface ForumThread {
   content: string;
   author: {
     _id: string;
-    username: string;
-    profile?: {
-      full_name?: string;
-      avatar?: string;
-    };
+    name: string;
+    avatar?: string;
   };
-  category?: string;
+  category?: string | {
+    _id: string;
+    name: string;
+    slug?: string;
+  };
   tags: string[];
   is_pinned: boolean;
   is_locked: boolean;
   stats?: {
-    views: number;
-    replies: number;
+    views_count: number;
+    replies_count: number;
   };
   last_reply_at?: string;
   createdAt?: string;
@@ -76,17 +77,17 @@ export interface ForumThread {
 export interface Comment {
   _id: string;
   content: string;
-  author: {
+  user: {
     _id: string;
-    username: string;
-    profile?: {
-      full_name?: string;
-      avatar?: string;
-    };
+    name: string;
+    avatar?: string;
   };
   target_model: string;
   target_id: string;
   parent_id?: string;
+  replies?: Comment[];
+  likes?: number;
+  isLiked?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -94,10 +95,20 @@ export interface Comment {
 export interface Scholarship {
   _id: string;
   name: string;
-  description: string;
-  amount: number;
-  deadline: string;
-  requirements: string[];
+  description?: string;
+  budget?: number;
+  quantity?: number;
+  amount?: number; // Legacy field
+  deadline?: string; // Legacy field
+  end_date?: string;
+  start_date?: string;
+  criteria?: Array<{
+    key: string;
+    name: string;
+    weight: number;
+    description?: string;
+  }>;
+  requirements?: string[];
   status: string;
   createdAt?: string;
   updatedAt?: string;

@@ -15,15 +15,25 @@ import { CreateFundDto } from './dto/create-fund.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Public } from '../common/decorators/public.decorator';
 
 /**
  * Funds Controller
  * Xử lý các HTTP request liên quan đến Fund
  */
 @Controller('funds')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class FundsController {
   constructor(private readonly fundsService: FundsService) {}
+
+  /**
+   * Lấy tất cả funds (Public)
+   * GET /funds/public
+   */
+  @Get('public')
+  @Public()
+  async findAllPublic() {
+    return this.fundsService.findAll();
+  }
 
   /**
    * Tạo fund mới
@@ -31,6 +41,7 @@ export class FundsController {
    * Yêu cầu quyền: admin
    */
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   async create(@Body() createFundDto: CreateFundDto) {
     return this.fundsService.create(createFundDto);
@@ -42,6 +53,7 @@ export class FundsController {
    * Yêu cầu quyền: admin, editor
    */
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'editor')
   async findAll() {
     return this.fundsService.findAll();

@@ -22,20 +22,34 @@ export class CloudinaryService {
       throw new BadRequestException('Không có file được tải lên');
     }
 
-    // Kiểm tra loại file
-    if (!file.mimetype.startsWith('image/')) {
-      throw new BadRequestException('File phải là ảnh');
+    // Kiểm tra loại file - cho phép cả ảnh và document
+    const allowedMimeTypes = [
+      'image/', // Tất cả các loại ảnh
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    ];
+    
+    const isValidType = allowedMimeTypes.some(type => file.mimetype.startsWith(type));
+    if (!isValidType) {
+      throw new BadRequestException('File không được hỗ trợ. Chỉ chấp nhận: ảnh, PDF, Word, Excel');
     }
 
-    // Kiểm tra kích thước file (tối đa 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Kiểm tra kích thước file (tối đa 10MB cho document, 5MB cho ảnh)
+    const maxSize = file.mimetype.startsWith('image/') 
+      ? 5 * 1024 * 1024  // 5MB cho ảnh
+      : 10 * 1024 * 1024; // 10MB cho document
     if (file.size > maxSize) {
-      throw new BadRequestException('Kích thước file không được vượt quá 5MB');
+      throw new BadRequestException(
+        `Kích thước file không được vượt quá ${maxSize / 1024 / 1024}MB`
+      );
     }
 
     return new Promise((resolve, reject) => {
       const uploadOptions: any = {
-        resource_type: 'auto',
+        resource_type: 'auto', // Cloudinary tự động detect loại file
       };
 
       if (folder) {
@@ -46,11 +60,11 @@ export class CloudinaryService {
         uploadOptions,
         (error, result) => {
           if (error) {
-            reject(new BadRequestException(`Lỗi upload ảnh: ${error.message}`));
+            reject(new BadRequestException(`Lỗi upload file: ${error.message}`));
           } else if (result) {
             resolve(result.secure_url);
           } else {
-            reject(new BadRequestException('Lỗi upload ảnh: Không nhận được kết quả từ Cloudinary'));
+            reject(new BadRequestException('Lỗi upload file: Không nhận được kết quả từ Cloudinary'));
           }
         },
       );

@@ -81,6 +81,9 @@ export class FinanceTransactionsService {
    * @param status - Lọc theo trạng thái
    * @param startDate - Ngày bắt đầu
    * @param endDate - Ngày kết thúc
+   * @param search - Tìm kiếm theo tên/email user
+   * @param sortBy - Sắp xếp theo field
+   * @param sortOrder - Thứ tự sắp xếp (asc/desc)
    * @returns Danh sách transactions và metadata phân trang
    */
   async findAll(
@@ -91,6 +94,9 @@ export class FinanceTransactionsService {
     status?: string,
     startDate?: Date,
     endDate?: Date,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: string,
   ) {
     const skip = (page - 1) * limit;
     const query: any = {};
@@ -117,25 +123,51 @@ export class FinanceTransactionsService {
       }
     }
 
+    // Build sort object
+    const sortObj: any = {};
+    if (sortBy) {
+      sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    } else {
+      sortObj.createdAt = -1;
+    }
+
+    const transactionQuery = this.transactionModel
+      .find(query)
+      .populate('fund_id', 'name currency')
+      .populate('user_id', 'username email profile')
+      .sort(sortObj)
+      .skip(skip)
+      .limit(limit);
+
     const [transactions, total] = await Promise.all([
-      this.transactionModel
-        .find(query)
-        .populate('fund_id', 'name currency')
-        .populate('user_id', 'username profile')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec(),
+      transactionQuery.exec(),
       this.transactionModel.countDocuments(query).exec(),
     ]);
 
+    // Filter by search after populate (client-side filtering for populated fields)
+    let filteredTransactions = transactions;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredTransactions = transactions.filter((t: any) => {
+        const user = t.user_id;
+        const username = user?.username?.toLowerCase() || '';
+        const email = user?.email?.toLowerCase() || '';
+        const fullName = user?.profile?.full_name?.toLowerCase() || '';
+        const desc = t.desc?.toLowerCase() || '';
+        return username.includes(searchLower) || 
+               email.includes(searchLower) || 
+               fullName.includes(searchLower) || 
+               desc.includes(searchLower);
+      });
+    }
+
     return {
-      data: transactions,
+      data: filteredTransactions,
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: search ? filteredTransactions.length : total,
+        totalPages: search ? Math.ceil(filteredTransactions.length / limit) : Math.ceil(total / limit),
       },
     };
   }
@@ -247,6 +279,61 @@ export class FinanceTransactionsService {
     } else if (transaction.type === 'expense') {
       await this.fundsService.incrementBalance(fundId, amount);
     }
+  }
+
+  /**
+   * Lấy top contributors (người đóng góp nhiều nhất)
+   * @param limit - Số lượng top contributors
+   * @returns Danh sách top contributors với tổng số tiền đóng góp
+   */
+  async getTopContributors(limit: number = 3) {
+    const result = await this.transactionModel.aggregate([
+      {
+        $match: {
+          type: 'income',
+          status: 'completed',
+        },
+      },
+      {
+        $group: {
+          _id: '$user_id',
+          totalAmount: { $sum: { $toDouble: '$amount' } },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { totalAmount: -1 },
+      },
+      {
+        $limit: limit,
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: '$user',
+      },
+      {
+        $project: {
+          user_id: '$_id',
+          totalAmount: 1,
+          count: 1,
+          user: {
+            _id: '$user._id',
+            username: '$user.username',
+            name: { $ifNull: ['$user.profile.full_name', '$user.username'] },
+            avatar: '$user.profile.avatar',
+          },
+        },
+      },
+    ]);
+
+    return result;
   }
 }
 

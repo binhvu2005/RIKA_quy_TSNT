@@ -48,6 +48,11 @@ export class CreateScholarshipDto {
   @Min(0)
   budget: number;
 
+  /** Số lượng học bổng */
+  @IsNumber()
+  @Min(1)
+  quantity: number;
+
   /** Cấu hình tiêu chí */
   @IsOptional()
   @IsArray()

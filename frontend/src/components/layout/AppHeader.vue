@@ -96,6 +96,7 @@ const navItems = [
   { path: '/articles', label: 'Tin tức' },
   { path: '/forum', label: 'Diễn đàn' },
   { path: '/scholarships', label: 'Học bổng' },
+  { path: '/contributions', label: 'Đóng góp' },
 ];
 
 const userInitial = computed(() => {

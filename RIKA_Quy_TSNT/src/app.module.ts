@@ -67,6 +67,7 @@ import { UploadModule } from './common/modules/upload.module';
 
         return {
           uri: uri || 'mongodb://localhost:27017/rika_portal',
+
           ...options,
         };
       },

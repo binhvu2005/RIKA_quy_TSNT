@@ -391,28 +391,43 @@ async function updateProfile() {
 
   loading.value = true;
   try {
-    const response = await api.patch(`/users/${authStore.user._id}`, {
-      full_name: profile.full_name || undefined,
-      phone: profile.phone || undefined,
-      identity: profile.identity || undefined,
-      avatar: profile.avatar || undefined,
-    });
+    // Chỉ gửi các field có giá trị
+    const updateData: any = {};
+    if (profile.full_name) updateData.full_name = profile.full_name;
+    if (profile.phone) updateData.phone = profile.phone;
+    if (profile.identity) updateData.identity = profile.identity;
+    if (profile.avatar) updateData.avatar = profile.avatar;
+
+    const response = await api.patch(`/users/${authStore.user._id}`, updateData);
     
-    // Update user in store
-    if (response.data?.data) {
-      authStore.updateUser(response.data.data);
+    console.log('Update profile response:', response.data);
+    
+    // Update user in store - xử lý nhiều cấu trúc response
+    let updatedUser = null;
+    if (response.data?.data?.data) {
+      updatedUser = response.data.data.data;
+    } else if (response.data?.data) {
+      updatedUser = response.data.data;
     } else if (response.data) {
-      authStore.updateUser(response.data);
+      updatedUser = response.data;
     }
     
-    toast.success('Cập nhật thông tin thành công');
-    showAvatarUpload.value = false;
-    
-    // Refresh user data
-    await authStore.checkAuth();
+    if (updatedUser) {
+      authStore.updateUser(updatedUser);
+      toast.success('Cập nhật thông tin thành công');
+      showAvatarUpload.value = false;
+      
+      // Refresh user data để đảm bảo đồng bộ
+      await authStore.checkAuth();
+    } else {
+      toast.error('Không nhận được dữ liệu cập nhật');
+    }
   } catch (error: any) {
     console.error('Update profile error:', error);
-    toast.error(error.response?.data?.message || 'Không thể cập nhật thông tin');
+    const errorMessage = error.response?.data?.message || 
+                        error.response?.data?.error || 
+                        'Không thể cập nhật thông tin';
+    toast.error(errorMessage);
   } finally {
     loading.value = false;
   }

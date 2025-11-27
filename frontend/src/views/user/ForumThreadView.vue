@@ -10,22 +10,57 @@
       </router-link>
 
       <div class="card mb-6">
+        <div class="flex items-center space-x-2 mb-4">
+          <span
+            v-if="getCategoryName(thread.category)"
+            class="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-semibold rounded"
+          >
+            {{ getCategoryName(thread.category) }}
+          </span>
+          <span v-if="thread.is_pinned" class="px-3 py-1 bg-yellow-100 text-yellow-700 text-sm font-semibold rounded">
+            📌 Đã ghim
+          </span>
+        </div>
         <h1 class="text-3xl font-bold mb-4">{{ thread.title }}</h1>
         <div class="flex items-center space-x-4 text-gray-600 mb-6">
           <div class="flex items-center space-x-2">
-            <div class="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold">
-              {{ thread.author.username.charAt(0).toUpperCase() }}
+            <img
+              v-if="thread.author.avatar"
+              :src="thread.author.avatar"
+              :alt="thread.author.name"
+              class="w-10 h-10 rounded-full object-cover"
+            />
+            <div
+              v-else
+              class="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold"
+            >
+              {{ thread.author.name.charAt(0).toUpperCase() }}
             </div>
-            <span>{{ thread.author.username }}</span>
+            <span>{{ thread.author.name }}</span>
           </div>
           <span>{{ formatDate(thread.createdAt) }}</span>
-          <span>👁️ {{ thread.stats?.views || 0 }}</span>
+          <span>👁️ {{ thread.stats?.views_count || 0 }}</span>
         </div>
         <div class="prose max-w-none" v-html="thread.content"></div>
       </div>
 
       <div class="card">
-        <h2 class="text-2xl font-bold mb-6">Bình luận ({{ comments.length }})</h2>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold">Bình luận ({{ totalComments }})</h2>
+          <div class="flex items-center space-x-2">
+            <label class="text-sm text-gray-600">Sắp xếp:</label>
+            <select
+              v-model="sortBy"
+              @change="applySort"
+              class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Cũ nhất</option>
+              <option value="mostLiked">Nhiều tim nhất</option>
+            </select>
+          </div>
+        </div>
+
         <div v-if="authStore.isAuthenticated" class="mb-6">
           <textarea
             v-model="newComment"
@@ -44,25 +79,19 @@
           </router-link>
         </div>
 
-        <div class="space-y-6">
-          <div
-            v-for="comment in comments"
+        <div v-if="sortedComments.length === 0" class="text-center py-8 text-gray-500">
+          <p>Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
+        </div>
+        <div v-else class="space-y-4">
+          <CommentItem
+            v-for="comment in sortedComments"
             :key="comment._id"
-            class="bg-gray-50 rounded-lg p-4"
-          >
-            <div class="flex items-start space-x-3">
-              <div class="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold">
-                {{ comment.author.username.charAt(0).toUpperCase() }}
-              </div>
-              <div class="flex-1">
-                <div class="flex items-center space-x-2 mb-2">
-                  <span class="font-semibold">{{ comment.author.username }}</span>
-                  <span class="text-sm text-gray-500">{{ formatDate(comment.createdAt) }}</span>
-                </div>
-                <p class="text-gray-700">{{ comment.content }}</p>
-              </div>
-            </div>
-          </div>
+            :comment="comment"
+            :thread-id="thread!._id"
+            @reply="handleReply"
+            @like="handleLike"
+            @refresh="fetchComments"
+          />
         </div>
       </div>
     </div>
@@ -70,12 +99,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/auth';
 import { useToast } from 'vue-toastification';
 import type { ForumThread, Comment } from '../../types';
+import CommentItem from '../../components/CommentItem.vue';
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -85,9 +115,46 @@ const loading = ref(true);
 const thread = ref<ForumThread | null>(null);
 const comments = ref<Comment[]>([]);
 const newComment = ref('');
+const sortBy = ref('newest');
+
+const totalComments = computed(() => {
+  const countReplies = (comment: Comment): number => {
+    return 1 + (comment.replies?.reduce((sum, reply) => sum + countReplies(reply), 0) || 0);
+  };
+  return comments.value.reduce((sum, comment) => sum + countReplies(comment), 0);
+});
+
+const sortedComments = computed(() => {
+  const sorted = [...comments.value];
+  
+  if (sortBy.value === 'newest') {
+    return sorted.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
+  } else if (sortBy.value === 'oldest') {
+    return sorted.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateA - dateB;
+    });
+  } else if (sortBy.value === 'mostLiked') {
+    return sorted.sort((a, b) => {
+      const likesA = a.likes || 0;
+      const likesB = b.likes || 0;
+      return likesB - likesA;
+    });
+  }
+  
+  return sorted;
+});
 
 onMounted(async () => {
-  await Promise.all([fetchThread(), fetchComments()]);
+  await fetchThread();
+  if (thread.value) {
+    await fetchComments();
+  }
 });
 
 async function fetchThread() {
@@ -104,7 +171,10 @@ async function fetchThread() {
 }
 
 async function fetchComments() {
-  if (!thread.value) return;
+  if (!thread.value) {
+    console.warn('Cannot fetch comments: thread not loaded yet');
+    return;
+  }
   try {
     const response = await api.get('/comments', {
       params: {
@@ -112,10 +182,94 @@ async function fetchComments() {
         target_id: thread.value._id,
       },
     });
-    comments.value = response.data.data || [];
-  } catch (error) {
+    
+    // API trả về: { success: true, data: { data: commentTree, pagination: {...} }, timestamp: ... }
+    // Hoặc: { data: { data: commentTree, pagination: {...} } }
+    let commentTree: Comment[] = [];
+    
+    if (response.data?.data?.data && Array.isArray(response.data.data.data)) {
+      // Cấu trúc: response.data.data.data (có TransformInterceptor)
+      commentTree = response.data.data.data;
+    } else if (response.data?.data && Array.isArray(response.data.data)) {
+      // Cấu trúc: response.data.data (không có TransformInterceptor hoặc đã unwrap)
+      commentTree = response.data.data;
+    } else if (Array.isArray(response.data)) {
+      // Cấu trúc: response.data (trực tiếp là array)
+      commentTree = response.data;
+    }
+    
+    console.log('Comments fetched:', commentTree.length, 'comments');
+    
+    // Load likes và check liked status cho mỗi comment
+    if (commentTree.length > 0) {
+      comments.value = await Promise.all(
+        commentTree.map((comment: Comment) => loadCommentData(comment))
+      );
+    } else {
+      comments.value = [];
+    }
+  } catch (error: any) {
     console.error('Error fetching comments:', error);
+    if (error.response) {
+      console.error('Response error:', error.response.data);
+    }
+    comments.value = [];
+    toast.error('Không thể tải bình luận');
   }
+}
+
+async function loadCommentData(comment: Comment): Promise<Comment> {
+  // Initialize likes if not present
+  if (comment.likes === undefined) {
+    comment.likes = 0;
+  }
+  if (comment.isLiked === undefined) {
+    comment.isLiked = false;
+  }
+  
+  // Load likes count
+  try {
+    const likesResponse = await api.get('/reactions', {
+      params: {
+        target_model: 'Comment',
+        target_id: comment._id,
+      },
+    });
+    const reactions = likesResponse.data?.data || likesResponse.data || {};
+    comment.likes = (reactions.like || []).length + (reactions.love || []).length;
+    
+    // Check if current user liked
+    if (authStore.isAuthenticated) {
+      try {
+        const checkResponse = await api.get('/reactions/check', {
+          params: {
+            target_model: 'Comment',
+            target_id: comment._id,
+          },
+        });
+        comment.isLiked = !!(checkResponse.data?.data || checkResponse.data);
+      } catch {
+        comment.isLiked = false;
+      }
+    }
+  } catch (error) {
+    console.warn('Error loading likes for comment:', comment._id, error);
+    comment.likes = 0;
+    comment.isLiked = false;
+  }
+  
+  // Recursively load replies
+  if (comment.replies && comment.replies.length > 0) {
+    comment.replies = await Promise.all(
+      comment.replies.map((reply: Comment) => loadCommentData(reply))
+    );
+  }
+  
+  return comment;
+}
+
+function applySort() {
+  // Sorting is handled by computed property
 }
 
 async function submitComment() {
@@ -135,12 +289,29 @@ async function submitComment() {
   }
 }
 
+function handleReply(parentId: string, content: string) {
+  // Handled by CommentItem component
+}
+
+async function handleLike(commentId: string) {
+  // Handled by CommentItem component, refresh after
+  await fetchComments();
+}
+
+function getCategoryName(category?: string | { _id: string; name: string; slug?: string }): string {
+  if (!category) return '';
+  if (typeof category === 'string') return '';
+  return category.name || '';
+}
+
 function formatDate(date?: string) {
   if (!date) return '';
   return new Date(date).toLocaleDateString('vi-VN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 </script>
